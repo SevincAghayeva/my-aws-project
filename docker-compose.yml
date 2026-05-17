@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  localstack:
+    container_name: localstack_main
+    image: localstack/localstack:3.4.0
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3,dynamodb,sqs
+      - AWS_DEFAULT_REGION=us-east-1
+    volumes:
+      - "localstack_data:/var/lib/localstack"
+    networks:
+      - aws_network
+
+  my-aws-app:
+    container_name: my-aws-project_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - AWS_REGION=us-east-1
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+
+      # Əgər kodda birbaşa AWS_ENDPOINT dəyişənini oxuyursansa:
+      - AWS_ENDPOINT=http://localstack:4566
+
+      # Spring Cloud AWS standart mühit dəyişənləri (Hər ehtimala qarşı ikisini də qoyuruq):
+      - SPRING_CLOUD_AWS_SQS_ENDPOINT=http://localstack:4566
+      - SPRING_CLOUD_AWS_S3_ENDPOINT=http://localstack:4566
+    depends_on:
+      - localstack
+    networks:
+      - aws_network
+
+volumes:
+  localstack_data:
+
+networks:
+  aws_network:
+    driver: bridge
